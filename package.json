@@ -1,0 +1,7 @@
+{
+  "name": "kmg-seat-finder",
+  "version": "2.0.0",
+  "private": true,
+  "description": "KMG College exam seat finder with private server-side storage and timed release",
+  "dependencies": { "mongodb": "^6.8.0" }
+}

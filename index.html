@@ -64,6 +64,8 @@ th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line)}
 .hint{font-size:.78rem;color:var(--mut);margin-top:10px}
 @media (max-width:720px){.shell{flex-direction:column}.left{flex:none;padding:24px 16px}.left h1{font-size:2.2rem}.right h1{font-size:1.25rem}.two{grid-template-columns:1fr}}
 @media print{.noprint{display:none!important}body{background:#fff}}
+.note{text-align:center;color:var(--mut);font-size:.8rem;margin:12px 0 0}
+.go:disabled{opacity:.6}
 </style>
 </head>
 <body>
@@ -85,6 +87,7 @@ th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line)}
       <div class="f"><i>&#128337;</i><select id="ses"><option>FN</option><option>AN</option></select></div>
       <div class="f"><i>&#128197;</i><input id="dt" type="date"></div>
       <button class="go" id="go">submit</button>
+      <p class="note">Your seat details are shown 1 hour before the exam starts.</p>
     </div>
     <div id="out"></div>
     <div class="quote">"It doesn't matter what others are doing; it matters what you are doing."</div>
@@ -93,129 +96,171 @@ th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line)}
 </div>
 
 <div id="admin" class="panel hide">
-  <div class="noprint" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-    <h2>Exam cell: allocate seats</h2>
-    <button class="btn alt" id="toStudent">&larr; Back</button>
+  <div id="gate">
+    <h2>Exam cell login</h2>
+    <label>Password</label>
+    <input id="pw" type="password" autocomplete="current-password">
+    <div class="btns"><button class="btn" id="login">Login</button><button class="btn alt" id="gback">&larr; Back</button></div>
+    <div id="gmsg"></div>
   </div>
-  <div class="two noprint">
-    <div><label>Exam date</label><input id="adt" type="date"></div>
-    <div><label>Session</label><select id="ases"><option>FN</option><option>AN</option></select></div>
-  </div>
-  <label class="noprint">Students (register number, name, department): one per line</label>
-  <textarea id="stu" class="noprint"></textarea>
-  <label class="noprint">Halls (name, rows, columns): one per line</label>
-  <textarea id="halls" class="noprint" style="min-height:80px"></textarea>
-  <div class="btns noprint">
-    <button class="btn" id="alloc">Allocate seats</button>
-    <button class="btn alt" id="sample">Load sample</button>
-    <input type="file" id="file" accept=".csv,.txt" style="width:auto">
-  </div>
-  <div id="amsg" class="noprint"></div>
-  <p class="hint noprint">Departments are interleaved so neighbours write different papers. Halls fill row by row. Each date and session is saved separately in this browser.</p>
 
-  <div id="saved" class="hide">
-    <label>View saved sitting</label>
-    <div class="two"><select id="sitsel"></select><select id="hallsel"></select></div>
-    <div id="chart" class="scroll" style="margin-top:12px"></div>
-    <div class="btns noprint"><button class="btn alt" id="copy">Copy as CSV</button><button class="btn alt" id="print">Print</button></div>
-    <div class="scroll" style="margin-top:12px"><table id="tbl"></table></div>
+  <div id="panel" class="hide">
+    <div class="noprint" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <h2>Allocate seats</h2>
+      <button class="btn alt" id="logout">Logout</button>
+    </div>
+    <div class="two noprint">
+      <div><label>Exam date</label><input id="adt" type="date"></div>
+      <div><label>Session</label><select id="ases"><option>FN</option><option>AN</option></select></div>
+    </div>
+    <div class="noprint"><label>Exam start time (IST, 24-hour)</label><input id="atime" type="time" value="09:30"></div>
+    <label class="noprint">Students (register number, name, department): one per line</label>
+    <textarea id="stu" class="noprint"></textarea>
+    <label class="noprint">Halls (name, rows, columns): one per line</label>
+    <textarea id="halls" class="noprint" style="min-height:80px">Hall A, 5, 8
+Hall B, 5, 8</textarea>
+    <div class="btns noprint">
+      <button class="btn" id="alloc">Allocate &amp; save</button>
+      <button class="btn alt" id="sample">Load sample</button>
+      <input type="file" id="file" accept=".csv,.txt" style="width:auto">
+    </div>
+    <div id="amsg" class="noprint"></div>
+    <p class="hint noprint">Allocations are stored privately on the server. Students can see their own seat only from 60 minutes before the start time, and never see anyone else's.</p>
+
+    <div id="saved" class="hide">
+      <label class="noprint">Saved sittings</label>
+      <div class="two noprint"><select id="sitsel"></select><select id="hallsel"></select></div>
+      <div id="chart" class="scroll" style="margin-top:12px"></div>
+      <div class="btns noprint">
+        <button class="btn alt" id="copy">Copy as CSV</button>
+        <button class="btn alt" id="print">Print</button>
+        <button class="btn alt" id="del" style="color:var(--err)">Delete sitting</button>
+      </div>
+      <div class="scroll" style="margin-top:12px"><table id="tbl"></table></div>
+    </div>
   </div>
 </div>
-
 </div>
 <script>
 var $=function(i){return document.getElementById(i)};
-var KEY="kmg-seatfinder-v1";
-var state={stu:"",halls:"Hall A, 5, 8\nHall B, 5, 8",sit:{}};
-function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
-function load(){try{var s=localStorage.getItem(KEY);if(s){var o=JSON.parse(s);if(o&&typeof o==="object")state=Object.assign(state,o)}}catch(e){}}
+var PW="",CUR=null;
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
 function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function fmt(iso){return new Date(iso).toLocaleString("en-IN",{timeZone:"Asia/Kolkata",day:"numeric",month:"short",hour:"numeric",minute:"2-digit"})}
+function api(url,body,pw){
+  return fetch(url,{method:"POST",headers:{"Content-Type":"application/json","X-Admin-Password":pw||""},body:JSON.stringify(body)})
+    .then(function(r){return r.json().catch(function(){return{}}).then(function(j){return{status:r.status,data:j}})});
+}
+function view(a){$("student").classList.toggle("hide",a);$("admin").classList.toggle("hide",!a)}
+$("toadmin").onclick=function(){view(true)};
+$("gback").onclick=function(){view(false)};
+$("logout").onclick=function(){PW="";CUR=null;$("pw").value="";$("panel").classList.add("hide");$("gate").classList.remove("hide");view(false)};
 
-function view(a){$("student").classList.toggle("hide",a);$("admin").classList.toggle("hide",!a);if(a)renderSaved()}
-$("toadmin").onclick=function(){view(true)};$("toStudent").onclick=function(){view(false)};
+/* ---------- student ---------- */
+function find(){
+  var q=$("reg").value.trim().toUpperCase(),s=$("ses").value,d=$("dt").value,o=$("out");
+  function err(m,lock){o.innerHTML='<div class="msg err">'+(lock?'&#128274; ':'')+esc(m)+'</div>'}
+  if(!q)return err("Please enter your register number.");
+  if(!d)return err("Please choose the exam date.");
+  $("go").disabled=true;o.innerHTML="";
+  api("/api/lookup",{reg:q,session:s,date:d}).then(function(r){
+    $("go").disabled=false;
+    if(r.status!==200)return err(r.data.message||"Something went wrong.",r.data.code==="not_released");
+    var a=r.data.student,h=r.data.hall;
+    var html='<div class="res">'+(a.name?'<p class="hi">Hello, <b>'+esc(a.name)+'</b></p>':'')+
+      '<div class="tiles"><div class="tile hall"><b>'+esc(a.hall)+'</b><span>Hall</span></div>'+
+      '<div class="tile"><b>'+a.row+'</b><span>Row</span></div><div class="tile"><b>'+a.col+'</b><span>Column</span></div><div class="tile"><b>'+a.seat+'</b><span>Seat no.</span></div></div>';
+    if(h){html+='<div class="map"><div class="board">FRONT / BOARD</div><div class="scroll"><div class="grid" style="grid-template-columns:repeat('+h.cols+',34px)">';
+      for(var rr=1;rr<=h.rows;rr++)for(var c=1;c<=h.cols;c++){var me=rr===a.row&&c===a.col;html+='<div class="s'+(me?' me':'')+'">'+(me?'YOU':((rr-1)*h.cols+c))+'</div>'}
+      html+='</div></div></div>'}
+    o.innerHTML=html+'</div>';
+  },function(){$("go").disabled=false;err("Network error. Please try again.")});
+}
+$("go").onclick=find;
+$("reg").addEventListener("keydown",function(e){if(e.key==="Enter")find()});
+
+/* ---------- admin ---------- */
+$("login").onclick=function(){
+  var p=$("pw").value;if(!p)return;$("gmsg").innerHTML="";
+  api("/api/admin",{action:"list"},p).then(function(r){
+    if(r.status===200){PW=p;$("gate").classList.add("hide");$("panel").classList.remove("hide");renderList(r.data.sittings,null)}
+    else $("gmsg").innerHTML='<div class="msg err">'+esc(r.data.message||"Login failed.")+'</div>';
+  },function(){$("gmsg").innerHTML='<div class="msg err">Network error.</div>'});
+};
+$("pw").addEventListener("keydown",function(e){if(e.key==="Enter")$("login").click()});
+$("ases").onchange=function(){$("atime").value=this.value==="FN"?"09:30":"14:00"};
 
 function parseStudents(t){var o=[],seen={};t.split(/\r?\n/).forEach(function(l,i){var p=l.split(",").map(function(x){return x.trim()});if(!p[0])return;if(i===0&&/reg|roll|number/i.test(p[0]))return;var r=p[0].toUpperCase();if(seen[r])return;seen[r]=1;o.push({reg:r,name:p[1]||"",dept:(p[2]||"General").toUpperCase()})});return o}
 function parseHalls(t){var o=[];t.split(/\r?\n/).forEach(function(l){var p=l.split(",").map(function(x){return x.trim()});var r=parseInt(p[1],10),c=parseInt(p[2],10);if(p[0]&&r>0&&c>0)o.push({name:p[0],rows:r,cols:c})});return o}
 
 $("alloc").onclick=function(){
-  var st=parseStudents($("stu").value),hl=parseHalls($("halls").value),box=$("amsg"),d=$("adt").value,s=$("ases").value;
-  if(!d){box.innerHTML='<div class="msg err">Choose the exam date.</div>';return}
-  if(!st.length){box.innerHTML='<div class="msg err">Add at least one student.</div>';return}
-  if(!hl.length){box.innerHTML='<div class="msg err">Add at least one hall.</div>';return}
+  var st=parseStudents($("stu").value),hl=parseHalls($("halls").value),box=$("amsg"),d=$("adt").value,s=$("ases").value,t=$("atime").value;
+  function err(m){box.innerHTML='<div class="msg err">'+m+'</div>'}
+  if(!d||!t)return err("Choose the exam date and start time.");
+  if(!st.length)return err("Add at least one student.");
+  if(!hl.length)return err("Add at least one hall.");
   var cap=hl.reduce(function(a,h){return a+h.rows*h.cols},0);
-  if(cap<st.length){box.innerHTML='<div class="msg err">Not enough seats: '+st.length+' students, capacity '+cap+'.</div>';return}
+  if(cap<st.length)return err("Not enough seats: "+st.length+" students, capacity "+cap+".");
   var g={};st.forEach(function(x){(g[x.dept]=g[x.dept]||[]).push(x)});
   var keys=Object.keys(g).sort(function(a,b){return g[b].length-g[a].length}),mixed=[],left=st.length;
   while(left>0){keys.forEach(function(k){if(g[k].length){mixed.push(g[k].shift());left--}})}
   var alloc=[],i=0;
   hl.forEach(function(h){for(var r=1;r<=h.rows;r++)for(var c=1;c<=h.cols;c++){if(i>=mixed.length)return;var x=mixed[i++];alloc.push({reg:x.reg,name:x.name,dept:x.dept,hall:h.name,row:r,col:c,seat:(r-1)*h.cols+c})}});
-  state.sit[d+"|"+s]={alloc:alloc,halls:hl};state.stu=$("stu").value;state.halls=$("halls").value;save();
-  box.innerHTML='<div class="msg ok">Saved '+alloc.length+' students for '+esc(d)+' '+esc(s)+'.</div>';
-  renderSaved(d+"|"+s);
+  box.innerHTML='<div class="msg ok">Saving...</div>';
+  api("/api/admin",{action:"save",date:d,session:s,time:t,halls:hl,alloc:alloc},PW).then(function(r){
+    if(r.status!==200)return err(esc(r.data.message||"Save failed."));
+    box.innerHTML='<div class="msg ok">Saved '+alloc.length+' students for '+esc(d)+' '+esc(s)+'. Students can check from '+esc(fmt(r.data.releaseAt))+' IST.</div>';
+    refresh(r.data.id);
+  },function(){err("Network error.")});
 };
 $("sample").onclick=function(){
   var ds=["CSE","ECE","MECH"],r=[];
   for(var i=1;i<=40;i++){var d=ds[i%3];r.push("26"+{CSE:"CS",ECE:"EC",MECH:"ME"}[d]+String(i).padStart(3,"0")+", Student "+i+", "+d)}
-  $("stu").value=r.join("\n");$("amsg").innerHTML='<div class="msg ok">Sample loaded. Press Allocate seats.</div>';
+  $("stu").value=r.join("\n");$("amsg").innerHTML='<div class="msg ok">Sample loaded.</div>';
 };
 $("file").onchange=function(){var f=this.files[0];if(!f)return;var r=new FileReader();r.onload=function(){$("stu").value=String(r.result)};r.readAsText(f)};
 
-function renderSaved(pick){
-  var keys=Object.keys(state.sit).sort();
-  $("saved").classList.toggle("hide",!keys.length);if(!keys.length)return;
-  var sel=$("sitsel"),cur=pick||sel.value;
-  sel.innerHTML=keys.map(function(k){var p=k.split("|");return '<option value="'+esc(k)+'">'+esc(p[0]+" · "+p[1])+'</option>'}).join("");
-  if(cur&&state.sit[cur])sel.value=cur;
-  var S=state.sit[sel.value];
-  var hs=$("hallsel"),hc=hs.value;
-  hs.innerHTML=S.halls.map(function(h){return '<option>'+esc(h.name)+'</option>'}).join("");
-  if(hc&&S.halls.some(function(h){return h.name===hc}))hs.value=hc;
-  drawChart(S,hs.value);
-  var t='<tr><th>Reg no.</th><th>Name</th><th>Dept</th><th>Hall</th><th>Row</th><th>Col</th><th>Seat</th></tr>';
-  S.alloc.forEach(function(a){t+='<tr><td>'+esc(a.reg)+'</td><td>'+esc(a.name)+'</td><td>'+esc(a.dept)+'</td><td>'+esc(a.hall)+'</td><td>'+a.row+'</td><td>'+a.col+'</td><td>'+a.seat+'</td></tr>'});
-  $("tbl").innerHTML=t;
+function refresh(pick){api("/api/admin",{action:"list"},PW).then(function(r){if(r.status===200)renderList(r.data.sittings,pick)})}
+function renderList(list,pick){
+  $("saved").classList.toggle("hide",!list.length);
+  if(!list.length){CUR=null;return}
+  var sel=$("sitsel");
+  sel.innerHTML=list.map(function(x){return '<option value="'+esc(x._id)+'">'+esc(x.date+" · "+x.session+" · "+x.count+" students · opens "+fmt(x.releaseAt))+'</option>'}).join("");
+  if(pick)sel.value=pick;
+  load(sel.value);
 }
-function drawChart(S,name){
-  var h=S.halls.filter(function(x){return x.name===name})[0];if(!h){$("chart").innerHTML="";return}
-  var m={};S.alloc.forEach(function(a){if(a.hall===name)m[a.row+"-"+a.col]=a});
+function load(id){
+  api("/api/admin",{action:"get",id:id},PW).then(function(r){
+    if(r.status!==200)return;CUR=r.data.sitting;
+    var hs=$("hallsel");hs.innerHTML=CUR.halls.map(function(h){return '<option>'+esc(h.name)+'</option>'}).join("");
+    drawChart(hs.value);
+    var t='<tr><th>Reg no.</th><th>Name</th><th>Dept</th><th>Hall</th><th>Row</th><th>Col</th><th>Seat</th></tr>';
+    CUR.alloc.forEach(function(a){t+='<tr><td>'+esc(a.reg)+'</td><td>'+esc(a.name)+'</td><td>'+esc(a.dept)+'</td><td>'+esc(a.hall)+'</td><td>'+a.row+'</td><td>'+a.col+'</td><td>'+a.seat+'</td></tr>'});
+    $("tbl").innerHTML=t;
+  });
+}
+function drawChart(name){
+  if(!CUR)return;var h=CUR.halls.filter(function(x){return x.name===name})[0];if(!h){$("chart").innerHTML="";return}
+  var m={};CUR.alloc.forEach(function(a){if(a.hall===name)m[a.row+"-"+a.col]=a});
   var html='<div class="board">FRONT / BOARD</div><div class="grid" style="grid-template-columns:repeat('+h.cols+',auto)">';
   for(var r=1;r<=h.rows;r++)for(var c=1;c<=h.cols;c++){var a=m[r+"-"+c];html+='<div class="s" style="min-width:56px" title="'+(a?esc(a.name+" · "+a.dept):"empty")+'">'+(a?esc(a.reg):"–")+'</div>'}
   $("chart").innerHTML=html+'</div>';
 }
-$("sitsel").onchange=function(){renderSaved(this.value)};
-$("hallsel").onchange=function(){drawChart(state.sit[$("sitsel").value],this.value)};
+$("sitsel").onchange=function(){load(this.value)};
+$("hallsel").onchange=function(){drawChart(this.value)};
+$("del").onclick=function(){
+  if(!CUR||!confirm("Delete this sitting and all its seat data?"))return;
+  api("/api/admin",{action:"delete",id:CUR._id},PW).then(function(){refresh(null)});
+};
 $("copy").onclick=function(){
-  var S=state.sit[$("sitsel").value];if(!S)return;
-  var csv="reg,name,dept,hall,row,col,seat\n"+S.alloc.map(function(a){return [a.reg,a.name,a.dept,a.hall,a.row,a.col,a.seat].join(",")}).join("\n");
+  if(!CUR)return;
+  var csv="reg,name,dept,hall,row,col,seat\n"+CUR.alloc.map(function(a){return [a.reg,a.name,a.dept,a.hall,a.row,a.col,a.seat].join(",")}).join("\n");
   function fb(){$("copy").insertAdjacentHTML("afterend",'<textarea readonly style="margin-top:8px;width:100%">'+esc(csv)+'</textarea>')}
   try{navigator.clipboard.writeText(csv).then(function(){$("copy").textContent="Copied"},fb)}catch(e){fb()}
 };
 $("print").onclick=function(){try{window.print()}catch(e){}};
 
-function find(){
-  var q=$("reg").value.trim().toUpperCase(),s=$("ses").value,d=$("dt").value,o=$("out");
-  function err(m){o.innerHTML='<div class="msg err">'+m+'</div>'}
-  if(!q)return err("Please enter your register number.");
-  if(!d)return err("Please choose the exam date.");
-  var S=state.sit[d+"|"+s];
-  if(!S)return err("Seating for "+esc(d)+" ("+esc(s)+") has not been published yet.");
-  var a=S.alloc.filter(function(x){return x.reg===q})[0];
-  if(!a)return err("No seat found for <b>"+esc(q)+"</b> on "+esc(d)+" ("+esc(s)+"). Check the details or contact the exam cell.");
-  var h=S.halls.filter(function(x){return x.name===a.hall})[0];
-  var html='<div class="res">'+(a.name?'<p class="hi">Hello, <b>'+esc(a.name)+'</b></p>':'')+
-    '<div class="tiles"><div class="tile hall"><b>'+esc(a.hall)+'</b><span>Hall</span></div>'+
-    '<div class="tile"><b>'+a.row+'</b><span>Row</span></div><div class="tile"><b>'+a.col+'</b><span>Column</span></div><div class="tile"><b>'+a.seat+'</b><span>Seat no.</span></div></div>';
-  if(h){html+='<div class="map"><div class="board">FRONT / BOARD</div><div class="scroll"><div class="grid" style="grid-template-columns:repeat('+h.cols+',34px)">';
-    for(var r=1;r<=h.rows;r++)for(var c=1;c<=h.cols;c++){var me=r===a.row&&c===a.col;html+='<div class="s'+(me?' me':'')+'">'+(me?'YOU':((r-1)*h.cols+c))+'</div>'}
-    html+='</div></div></div>'}
-  o.innerHTML=html+'</div>';
-}
-$("go").onclick=find;
-$("reg").addEventListener("keydown",function(e){if(e.key==="Enter")find()});
-
-load();
-$("dt").value=today();$("adt").value=today();$("stu").value=state.stu;$("halls").value=state.halls;
+$("dt").value=today();$("adt").value=today();
 </script>
 </body>
 </html>
