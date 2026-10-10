@@ -1,30 +1,17 @@
-# KMG College Exam Seat Finder (v2)
+# KMG College Exam Seat Finder (static, no database)
 
-Students enter register number, session and date to see their hall, row, column and seat.
+Plain HTML site. No backend, no database, no password, no environment variables.
 
-- Seat data is stored **privately on the server** (MongoDB), not in the browser.
-- Students can see **only their own seat**, and only from **60 minutes before** the exam start time (IST).
-- Only the exam cell (password protected) can upload students, allocate seats, view charts or delete sittings.
+- `index.html`: student page (register number + session + date -> hall, row, column, seat). Seats show from 60 minutes before the exam (`RELEASE_MINUTES` at the top of the script).
+- `admin.html`: exam cell page. Allocates seats and produces `seating.json`.
+- `seating.json`: the allocation data the student page reads.
+- `sample/`: sample student CSV.
 
-## Structure
-- `index.html`: student page + exam cell page
-- `api/lookup.js`: student lookup (checks release time)
-- `api/admin.js`: list / get / save / delete sittings (password required)
-- `lib/`: MongoDB connection and helpers
+## Publish seating for an exam
+1. Open `/admin.html`, pick date, session and start time, upload the students CSV, enter halls, click **Allocate seats**.
+2. Click **Download seating.json**.
+3. Replace `seating.json` in this repo (GitHub -> Add file -> Upload files, or `git add . && git commit && git push`).
+4. Vercel redeploys automatically. Students can look up seats from 1 hour before the exam.
 
-## Setup
-1. Create a free MongoDB Atlas cluster. Add a database user. Under Network Access allow `0.0.0.0/0` (Vercel uses changing IPs).
-2. Push this folder to GitHub and import it in Vercel (Framework: Other, no build command).
-3. In Vercel -> Settings -> Environment Variables add:
-   - `MONGODB_URI`: your Atlas connection string
-   - `ADMIN_PASSWORD`: a strong password for the exam cell
-   - `RELEASE_MINUTES` (optional, default 60)
-4. Redeploy. Open the site, click "Exam cell login", upload `sample/bsc_cs_java_exam_students.csv`.
-
-## Local run
-```
-npm i -g vercel
-npm install
-vercel dev
-```
-(create a `.env` with the variables above; never commit it)
+## Important
+`seating.json` is a public file. The 1-hour rule is enforced in the browser only, so someone who opens `/seating.json` directly can see all seats. Use this version only if seating is normally displayed publicly (as on a notice board).

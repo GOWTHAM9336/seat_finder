@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>KMG Exam Cell</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;500;700&display=swap">
+<style>
+:root{--bg:#f5f6fc;--card:#fff;--ink:#4a4a4a;--head:#555;--mut:#8a8f9c;--line:#d9dce5;--field:#f7f7f7;--or:#f98a4b;--gr:#48d16d;--hit:#f98a4b;--seat:#eceef4;--err:#d93025;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101218;--card:#1a1d26;--ink:#d8dbe4;--head:#e6e8ee;--mut:#9aa1b0;--line:#2c313d;--field:#222633;--seat:#282d3a}}
+:root[data-theme="dark"]{--bg:#101218;--card:#1a1d26;--ink:#d8dbe4;--head:#e6e8ee;--mut:#9aa1b0;--line:#2c313d;--field:#222633;--seat:#282d3a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Roboto Slab",Georgia,serif;font-size:16px;line-height:1.5}
+.page{max-width:980px;margin:0 auto;padding:24px 14px}
+.shell{display:flex;background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.12);min-height:560px}
+.left{flex:0 0 38%;background:var(--or);color:#fff;padding:32px 24px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.logo{width:64px;height:64px;border-radius:14px;background:#fff;color:var(--or);font-weight:700;font-size:1.35rem;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.left h2{margin:0;font-size:1.9rem}
+.left h1{margin:14px 0 0;font-size:2.8rem;line-height:1}
+.left h3{margin:14px 0 0;font-size:1.6rem;line-height:1.2}
+.left p{margin:22px 0 0;font-size:1.05rem}
+.left small{margin-top:auto;padding-top:24px;font-size:.78rem;opacity:.95}
+.right{flex:1;padding:28px 24px;display:flex;flex-direction:column;min-width:0}
+.right h1{margin:0 0 24px;text-align:center;color:var(--head);font-size:1.5rem;line-height:1.25}
+.form{width:100%;max-width:400px;margin:0 auto}
+.f{display:flex;align-items:stretch;border:1px solid var(--line);background:var(--field);border-radius:4px;margin-bottom:16px;height:50px}
+.f i{flex:0 0 46px;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--line);font-style:normal;color:var(--mut)}
+.f input,.f select{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:inherit;padding:0 12px;outline:0}
+.go{display:block;margin:22px auto 0;padding:12px 40px;border:0;border-radius:999px;background:var(--gr);color:#fff;font:inherit;font-weight:500;font-size:1rem;cursor:pointer;box-shadow:0 3px 8px rgba(72,209,109,.4)}
+.quote{margin-top:auto;padding-top:24px;color:var(--mut);font-size:1rem}
+.adminlink{align-self:flex-end;background:none;border:0;color:var(--mut);font:inherit;font-size:.75rem;cursor:pointer;text-decoration:underline;margin-top:8px}
+.msg{margin:16px auto 0;max-width:400px;padding:10px 12px;border-radius:6px;font-size:.92rem}
+.err{background:color-mix(in srgb,var(--err) 14%,transparent);color:var(--err)}
+.ok{background:color-mix(in srgb,var(--gr) 18%,transparent);color:#1f8a43}
+.res{max-width:400px;margin:18px auto 0}
+.res .hi{margin:0 0 8px;text-align:center}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{background:var(--field);border:1px solid var(--line);border-radius:8px;padding:10px 4px;text-align:center}
+.tile b{display:block;font-size:1.35rem;color:var(--head)}
+.tile span{font-size:.68rem;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+.tile.hall{grid-column:1/-1;background:var(--or);border-color:var(--or)}
+.tile.hall b,.tile.hall span{color:#fff}
+.map{margin-top:14px}
+.board{text-align:center;font-size:.7rem;color:var(--mut);border:1px dashed var(--line);border-radius:6px;padding:3px;margin-bottom:6px}
+.scroll{overflow-x:auto;max-width:100%;padding:3px 0}
+.grid{display:grid;gap:4px;width:max-content}
+.s{min-width:30px;height:28px;border-radius:6px;background:var(--seat);font-size:.58rem;display:flex;align-items:center;justify-content:center;color:var(--mut);padding:0 3px}
+.s.me{background:var(--or);color:#fff;font-weight:700;outline:2px solid var(--or);outline-offset:2px}
+.hide{display:none}
+/* admin */
+.panel{background:var(--card);border-radius:12px;box-shadow:0 4px 18px rgba(0,0,0,.12);padding:20px}
+.panel h2{margin:0 0 4px}
+.panel label{display:block;font-size:.8rem;color:var(--mut);margin:12px 0 4px}
+.panel textarea,.panel input,.panel select{width:100%;padding:10px;border:1px solid var(--line);border-radius:6px;background:var(--field);color:var(--ink);font:inherit;font-size:.9rem}
+.panel textarea{min-height:110px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.82rem}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.btn{padding:10px 18px;border:0;border-radius:999px;background:var(--or);color:#fff;font:inherit;font-weight:500;cursor:pointer}
+.btn.alt{background:var(--seat);color:var(--ink)}
+table{border-collapse:collapse;width:100%;font-size:.84rem}
+th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line)}
+.hint{font-size:.78rem;color:var(--mut);margin-top:10px}
+@media (max-width:720px){.shell{flex-direction:column}.left{flex:none;padding:24px 16px}.left h1{font-size:2.2rem}.right h1{font-size:1.25rem}.two{grid-template-columns:1fr}}
+@media print{.noprint{display:none!important}body{background:#fff}}
+.note{text-align:center;color:var(--mut);font-size:.8rem;margin:12px 0 0}
+.go:disabled{opacity:.6}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="panel">
+  <div class="noprint" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+    <h2>KMG Exam Cell: allocate seats</h2>
+    <a class="btn alt" href="index.html" style="text-decoration:none">&larr; Student page</a>
+  </div>
+  <div class="two noprint">
+    <div><label>Exam date</label><input id="adt" type="date"></div>
+    <div><label>Session</label><select id="ases"><option>FN</option><option>AN</option></select></div>
+  </div>
+  <div class="noprint"><label>Exam start time (IST, 24-hour)</label><input id="atime" type="time" value="09:30"></div>
+  <label class="noprint">Students (register number, name, department): one per line</label>
+  <textarea id="stu" class="noprint"></textarea>
+  <label class="noprint">Halls (name, rows, columns): one per line</label>
+  <textarea id="halls" class="noprint" style="min-height:80px">Hall A, 5, 8
+Hall B, 5, 8</textarea>
+  <div class="btns noprint">
+    <button class="btn" id="alloc">Allocate seats</button>
+    <button class="btn alt" id="sample">Load sample</button>
+    <input type="file" id="file" accept=".csv,.txt" style="width:auto">
+  </div>
+  <div id="amsg" class="noprint"></div>
+
+  <div id="saved" class="hide">
+    <h2 style="margin-top:22px" class="noprint">Publish</h2>
+    <p class="hint noprint">After allocating, download <b>seating.json</b>, replace the file of the same name in your GitHub repo, and commit. Vercel redeploys in about a minute and students can then look up their seats (visible from 1 hour before each exam).</p>
+    <div class="btns noprint">
+      <button class="btn" id="dl">Download seating.json</button>
+      <button class="btn alt" id="copy">Copy JSON</button>
+      <button class="btn alt" id="print">Print</button>
+      <button class="btn alt" id="del" style="color:var(--err)">Remove this sitting</button>
+    </div>
+    <label class="noprint">Sittings in seating.json</label>
+    <div class="two noprint"><select id="sitsel"></select><select id="hallsel"></select></div>
+    <div id="chart" class="scroll" style="margin-top:12px"></div>
+    <div class="scroll" style="margin-top:12px"><table id="tbl"></table></div>
+  </div>
+</div>
+</div>
+<script>
+var $=function(i){return document.getElementById(i)};
+var DB={sittings:{}};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function fmt(iso){return new Date(iso).toLocaleString("en-IN",{timeZone:"Asia/Kolkata",day:"numeric",month:"short",hour:"numeric",minute:"2-digit"})}
+function parseStudents(t){var o=[],seen={};t.split(/\r?\n/).forEach(function(l,i){var p=l.split(",").map(function(x){return x.trim()});if(!p[0])return;if(i===0&&/reg|roll|number/i.test(p[0]))return;var r=p[0].toUpperCase();if(seen[r])return;seen[r]=1;o.push({reg:r,name:p[1]||"",dept:(p[2]||"General").toUpperCase()})});return o}
+function parseHalls(t){var o=[];t.split(/\r?\n/).forEach(function(l){var p=l.split(",").map(function(x){return x.trim()});var r=parseInt(p[1],10),c=parseInt(p[2],10);if(p[0]&&r>0&&c>0)o.push({name:p[0],rows:r,cols:c})});return o}
+
+$("ases").onchange=function(){$("atime").value=this.value==="FN"?"09:30":"14:00"};
+$("alloc").onclick=function(){
+  var st=parseStudents($("stu").value),hl=parseHalls($("halls").value),box=$("amsg"),d=$("adt").value,s=$("ases").value,t=$("atime").value;
+  function err(m){box.innerHTML='<div class="msg err">'+m+'</div>'}
+  if(!d||!t)return err("Choose the exam date and start time.");
+  if(!st.length)return err("Add at least one student.");
+  if(!hl.length)return err("Add at least one hall.");
+  var cap=hl.reduce(function(a,h){return a+h.rows*h.cols},0);
+  if(cap<st.length)return err("Not enough seats: "+st.length+" students, capacity "+cap+".");
+  var g={};st.forEach(function(x){(g[x.dept]=g[x.dept]||[]).push(x)});
+  var keys=Object.keys(g).sort(function(a,b){return g[b].length-g[a].length}),mixed=[],left=st.length;
+  while(left>0){keys.forEach(function(k){if(g[k].length){mixed.push(g[k].shift());left--}})}
+  var alloc=[],i=0;
+  hl.forEach(function(h){for(var r=1;r<=h.rows;r++)for(var c=1;c<=h.cols;c++){if(i>=mixed.length)return;var x=mixed[i++];alloc.push({reg:x.reg,name:x.name,dept:x.dept,hall:h.name,row:r,col:c,seat:(r-1)*h.cols+c})}});
+  var key=d+"|"+s;
+  DB.sittings[key]={startAt:new Date(d+"T"+t+":00+05:30").toISOString(),halls:hl,alloc:alloc};
+  box.innerHTML='<div class="msg ok">Allocated '+alloc.length+' students for '+esc(d)+' '+esc(s)+'. Now download seating.json below and publish it.</div>';
+  renderList(key);
+};
+$("sample").onclick=function(){
+  var ds=["CSE","ECE","MECH"],r=[];
+  for(var i=1;i<=40;i++){var d=ds[i%3];r.push("26"+{CSE:"CS",ECE:"EC",MECH:"ME"}[d]+String(i).padStart(3,"0")+", Student "+i+", "+d)}
+  $("stu").value=r.join("\n");$("amsg").innerHTML='<div class="msg ok">Sample loaded.</div>';
+};
+$("file").onchange=function(){var f=this.files[0];if(!f)return;var r=new FileReader();r.onload=function(){$("stu").value=String(r.result)};r.readAsText(f)};
+
+function cur(){return DB.sittings[$("sitsel").value]}
+function renderList(pick){
+  var keys=Object.keys(DB.sittings).sort();
+  $("saved").classList.toggle("hide",!keys.length);if(!keys.length)return;
+  var sel=$("sitsel");
+  sel.innerHTML=keys.map(function(k){var p=k.split("|");return '<option value="'+esc(k)+'">'+esc(p[0]+" · "+p[1]+" · "+DB.sittings[k].alloc.length+" students · starts "+fmt(DB.sittings[k].startAt))+'</option>'}).join("");
+  if(pick&&DB.sittings[pick])sel.value=pick;
+  var S=cur(),hs=$("hallsel"),hc=hs.value;
+  hs.innerHTML=S.halls.map(function(h){return '<option>'+esc(h.name)+'</option>'}).join("");
+  if(hc&&S.halls.some(function(h){return h.name===hc}))hs.value=hc;
+  drawChart(hs.value);
+  var t='<tr><th>Reg no.</th><th>Name</th><th>Dept</th><th>Hall</th><th>Row</th><th>Col</th><th>Seat</th></tr>';
+  S.alloc.forEach(function(a){t+='<tr><td>'+esc(a.reg)+'</td><td>'+esc(a.name)+'</td><td>'+esc(a.dept)+'</td><td>'+esc(a.hall)+'</td><td>'+a.row+'</td><td>'+a.col+'</td><td>'+a.seat+'</td></tr>'});
+  $("tbl").innerHTML=t;
+}
+function drawChart(name){
+  var S=cur();if(!S)return;var h=S.halls.filter(function(x){return x.name===name})[0];if(!h){$("chart").innerHTML="";return}
+  var m={};S.alloc.forEach(function(a){if(a.hall===name)m[a.row+"-"+a.col]=a});
+  var html='<div class="board">FRONT / BOARD</div><div class="grid" style="grid-template-columns:repeat('+h.cols+',auto)">';
+  for(var r=1;r<=h.rows;r++)for(var c=1;c<=h.cols;c++){var a=m[r+"-"+c];html+='<div class="s" style="min-width:56px" title="'+(a?esc(a.name+" · "+a.dept):"empty")+'">'+(a?esc(a.reg):"–")+'</div>'}
+  $("chart").innerHTML=html+'</div>';
+}
+$("sitsel").onchange=function(){renderList(this.value)};
+$("hallsel").onchange=function(){drawChart(this.value)};
+$("del").onclick=function(){
+  if(!confirm("Remove this sitting from seating.json?"))return;
+  delete DB.sittings[$("sitsel").value];renderList(null);
+};
+$("dl").onclick=function(){
+  var b=new Blob([JSON.stringify(DB)],{type:"application/json"}),a=document.createElement("a");
+  a.href=URL.createObjectURL(b);a.download="seating.json";document.body.appendChild(a);a.click();a.remove();
+};
+$("copy").onclick=function(){
+  var j=JSON.stringify(DB);
+  function fb(){$("copy").insertAdjacentHTML("afterend",'<textarea readonly style="margin-top:8px;width:100%">'+esc(j)+'</textarea>')}
+  try{navigator.clipboard.writeText(j).then(function(){$("copy").textContent="Copied"},fb)}catch(e){fb()}
+};
+$("print").onclick=function(){try{window.print()}catch(e){}};
+
+$("adt").value=today();
+// load the current seating.json so new sittings are added to it, not replacing it
+fetch("seating.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(j){
+  if(j&&j.sittings)DB=j;renderList(null);
+}).catch(function(){});
+</script>
+</body>
+</html>
