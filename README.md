@@ -1,4 +1,4 @@
-# KMG College Exam Seat Finder (static, no database)
+#  College Exam Seat Finder (static, no database)
 
 Plain HTML site. No backend, no database, no password, no environment variables.
 
